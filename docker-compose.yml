@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo:4.2
+    container_name: mongodb
+    ports:
+      - 27017:27017
+    networks:
+      - product-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: mongodb
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_VHOST: assessment
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_USER: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - product-network
+  product-catalog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: product-catalog:latest
+    container_name: product-catalog-api
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - product-network
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:mongodb@mongodb:27017/productcatalog?authSource=admin
+      SPRING_DATA_MONGODB_DATABASE: productcatalog
+      SPRING_RABBITMQ_ADDRESS: rabbitmq:5672
+      SPRING_RABBITMQ_VHOST: assessment
+      SPRING_RABBITMQ_USERNAME: rabbitmq
+      SPRING_RABBITMQ_PASSWORD: rabbitmq
+networks:
+  product-network:
+    driver: bridge
+
